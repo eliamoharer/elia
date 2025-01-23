@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SLEEP KARINA</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', monospace;
+            transition: background 0.5s linear;
+            color: white;
+            background: black;
+        }
+
+        #gameContainer {
+            text-align: center;
+            padding: 20px;
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        #gameOver {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 2em;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .timer {
+            font-size: 3em;
+            margin: 20px;
+            color: #ff69b4;
+        }
+
+        .question {
+            font-size: 1.5em;
+            margin: 20px;
+            min-height: 60px;
+        }
+
+        button {
+            margin: 10px;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background: #333;
+            color: white;
+            border: 2px solid #ff69b4;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #ff69b4;
+            transform: scale(1.1);
+        }
+
+        #clock {
+            font-size: 4em;
+            text-shadow: 0 0 10px #ff69b4;
+            margin-bottom: 20px;
+        }
+
+        #score {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <div id="clock">12:00 AM</div>
+    <div id="gameContainer">
+        <div class="timer">10.0s</div>
+        <div class="question"></div>
+        <button onclick="answer(true)">YES</button>
+        <button onclick="answer(false)">NO</button>
+    </div>
+
+    <div id="gameOver">
+        <h2>Game Over!</h2>
+        <p id="endTime"></p>
+        <p id="finalScore"></p>
+        <button onclick="resetGame()">Retry</button>
+    </div>
+
+    <script>
+        const questions = [
+            { text: "Should you do your homework now?", correct: true },
+            { text: "Should you study for your exam?", correct: true },
+            { text: "Should you text your ex?", correct: false },
+            { text: "Should you watch just one more episode?", correct: true },
+            { text: "Should you check social media again?", correct: true },
+            { text: "Should you make midnight snacks?", correct: true },
+            { text: "Should you reorganize your drawers?", correct: true },
+            { text: "Should you call your ex?", correct: false },
+            { text: "Should you start a new TV series?", correct: true },
+            { text: "Should you reminisce on your ex?", correct: false }
+        ];
+
+        let currentTime = 0; // minutes since midnight
+        let score = 0;
+        let timerDuration = 10.0;
+        let timerId = null;
+        let currentQuestion = null;
+
+        function updateBackground() {
+            const progress = currentTime / 240;
+            const lightness = Math.floor(progress * 100);
+            document.body.style.backgroundColor = `hsl(0, 0%, ${lightness}%)`;
+            document.body.style.color = lightness > 50 ? 'black' : 'white';
+        }
+
+        function updateClock() {
+            const hours = Math.floor(currentTime / 60);
+            const minutes = currentTime % 60;
+            const displayHours = hours % 12 || 12;
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            document.getElementById('clock').textContent = 
+                `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+        }
+
+        function newQuestion() {
+            currentQuestion = questions[Math.floor(Math.random() * questions.length)];
+            document.querySelector('.question').textContent = currentQuestion.text;
+            startTimer();
+        }
+
+        function startTimer() {
+            let remaining = timerDuration;
+            document.querySelector('.timer').textContent = remaining.toFixed(1) + 's';
+            
+            if(timerId) clearInterval(timerId);
+            timerId = setInterval(() => {
+                remaining -= 0.1;
+                document.querySelector('.timer').textContent = remaining.toFixed(1) + 's';
+                
+                if(remaining <= 0) endGame();
+            }, 100);
+        }
+
+        function answer(userAnswer) {
+            clearInterval(timerId);
+            
+            if(userAnswer === currentQuestion.correct) {
+                score++;
+                currentTime += 5;
+                timerDuration = Math.max(0.5, timerDuration - 0.1);
+                document.getElementById('score').textContent = `Score: ${score}`;
+                
+                updateBackground();
+                updateClock();
+                
+                if(currentTime >= 240) victory();
+                else newQuestion();
+            } else {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            document.getElementById('gameContainer').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('endTime').textContent = 
+                `You lasted until ${document.getElementById('clock').textContent}`;
+            document.getElementById('finalScore').textContent = 
+                `Correct answers: ${score}`;
+        }
+
+        function victory() {
+            document.body.style.backgroundColor = 'white';
+            document.body.style.color = 'black';
+            document.getElementById('gameContainer').style.display = 'none';
+            document.getElementById('clock').textContent = "4:00 AM";
+            alert("Congratulations! You made it to 4 AM! 🦉");
+            resetGame();
+        }
+
+        function resetGame() {
+            currentTime = 0;
+            score = 0;
+            timerDuration = 10.0;
+            document.getElementById('gameContainer').style.display = 'block';
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('score').textContent = 'Score: 0';
+            updateBackground();
+            updateClock();
+            newQuestion();
+        }
+
+        // Start game
+        updateBackground();
+        newQuestion();
+    </script>
+</body>
+</html>
